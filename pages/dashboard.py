@@ -242,6 +242,9 @@ html, body, [class*="css"], .stApp {
 
 /* ── Widget accent → green ── */
 [data-testid="stSlider"] [role="slider"] { background: #1A5C38 !important; border-color: #1A5C38 !important; }
+[data-testid="stSlider"] [data-testid="stThumbValue"] { color: #1A5C38 !important; }
+[data-testid="stSlider"] div[role="slider"] ~ div { background: #1A5C38 !important; }
+[data-baseweb="slider"] div[style*="background-color"] { background-color: #1A5C38 !important; }
 
 /* Multiselect selected tags — light green pill */
 [data-baseweb="tag"] { background-color: #E8F5EE !important; color: #1A5C38 !important;
@@ -603,8 +606,8 @@ st.markdown('<div class="sec-header">Foreign Income &amp; Exchange</div>',
 fx_left, fx_right = st.columns([3, 2])
 
 with fx_left:
-    # Three mini KPIs about EUR income
-    m1, m2, m3 = st.columns(3)
+    # Two mini KPIs about EUR income
+    m1, m2 = st.columns(2)
     with m1:
         st.markdown(f"""<div class="kpi-card">
             <div class="kpi-label">EUR Received (90d)</div>
@@ -616,12 +619,6 @@ with fx_left:
             <div class="kpi-label">CHF Equivalent</div>
             <div class="kpi-value pos">CHF {eur_received_chf:,.0f}</div>
             <div class="kpi-sub">at booking rate</div></div>""",
-            unsafe_allow_html=True)
-    with m3:
-        st.markdown(f"""<div class="kpi-card">
-            <div class="kpi-label">Live EUR → CHF</div>
-            <div class="kpi-value blue">{EUR_TO_CHF:.4f}</div>
-            <div class="kpi-sub">1 EUR in CHF · now</div></div>""",
             unsafe_allow_html=True)
 
     st.markdown("<div style='height:.4rem'></div>", unsafe_allow_html=True)
@@ -668,7 +665,7 @@ with fx_left:
 
     rows_html = ""
     for _, row in top_cats.iterrows():
-        bar_pct = row["amount"] / max_amt * 100
+        bar_pct = row["amount"] / top_cats["amount"].sum() * 100
         rows_html += f"""
         <div style="margin-bottom:10px;">
           <div style="display:flex; justify-content:space-between; font-size:.78rem;
@@ -693,12 +690,12 @@ with fx_right:
         <div class="fx-sub">Source: frankfurter.app &nbsp;·&nbsp; refreshed hourly</div>
     </div>""", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
-
     # ── Allowance calculator ──────────────────────────────────────────────────
-    st.markdown('<div class="calc-box">', unsafe_allow_html=True)
-    st.markdown("**Allowance Calculator**")
-    st.caption("How much CHF does your EUR allowance actually buy?")
+    st.markdown("""
+    <div style="margin-top:1.5rem; margin-bottom:-0.5rem;">
+        <div style="font-size:.95rem; font-weight:700; color:#1C2B2B;">Allowance Calculator</div>
+        <div style="font-size:.75rem; color:#5A6B6B;">How much CHF does your EUR allowance actually buy?</div>
+    </div>""", unsafe_allow_html=True)
 
     eur_input = st.number_input(
         "Monthly allowance (EUR)", min_value=100.0, max_value=10000.0,
@@ -755,8 +752,6 @@ with fx_right:
                 1 {other_ccy} = CHF {1/rates_from_chf[other_ccy]:.4f}
             </span>
         </div>""", unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ── ML FORECAST ───────────────────────────────────────────────────────────────
