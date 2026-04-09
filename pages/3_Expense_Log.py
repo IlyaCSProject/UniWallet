@@ -218,10 +218,96 @@ html, body, [class*="css"], .stApp {
 [data-testid="stSidebar"] .sb-logo-text .sb-sub { color: #5A6B6B !important; }
 [data-testid="stSidebar"] small { color: #5A6B6B !important; }
 
+/* ── Sidebar input widgets — white background, dark text ── */
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] [data-baseweb="input"] div,
+[data-testid="stSidebar"] [data-testid="stNumberInput-Input"],
+[data-testid="stSidebar"] [data-testid="stDateInput-Input"] {
+    background-color: white !important;
+    color: #1C2B2B !important;
+    border: 1px solid #D1E7D9 !important;
+}
+[data-testid="stSidebar"] button[data-testid="stNumberInput-StepUp"],
+[data-testid="stSidebar"] button[data-testid="stNumberInput-StepDown"],
+[data-testid="stSidebar"] [data-testid="stNumberInput"] button {
+    background-color: white !important;
+    color: #1C2B2B !important;
+}
+[data-testid="stSidebar"] [data-baseweb="input"] {
+    background-color: white !important;
+}
+
 /* ── Info / warning bars — dark text ── */
 [data-testid="stAlert"] p,
 [data-testid="stAlert"] span,
 div[data-baseweb="notification"] div { color: #1C2B2B !important; }
+
+/* ── Force all labels and captions to be dark ── */
+label, .stCaption, [data-testid="stCaption"],
+[data-testid="stWidgetLabel"] label,
+[data-testid="stWidgetLabel"] p,
+small { color: #5A6B6B !important; }
+
+/* ── ALL inputs across entire page — white background, dark text ── */
+input, textarea,
+[data-baseweb="input"],
+[data-baseweb="input"] div,
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input,
+[data-testid="stDateInput"] input,
+[data-testid="stTextInput"] > div > div,
+[data-testid="stNumberInput"] > div > div,
+[data-testid="stDateInput"] > div > div {
+    background-color: white !important;
+    color: #1C2B2B !important;
+    border: 1px solid #D1E7D9 !important;
+}
+
+/* ── Number input +/- buttons ── */
+[data-testid="stNumberInput"] button {
+    background-color: white !important;
+    color: #1C2B2B !important;
+}
+
+/* ── Radio buttons — dark text ── */
+[data-testid="stRadio"] label,
+[data-testid="stRadio"] label span,
+[data-testid="stRadio"] label p,
+[data-testid="stRadio"] div { color: #1C2B2B !important; }
+
+/* ── Buttons — green with white text ── */
+button[kind="primary"],
+button[data-testid="stFormSubmitButton"] button,
+.stButton button {
+    background-color: #1A5C38 !important;
+    color: white !important;
+    border: none !important;
+}
+.stButton button:hover {
+    background-color: #2A8A56 !important;
+}
+
+/* ── Download button ── */
+[data-testid="stDownloadButton"] button {
+    background-color: #1A5C38 !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* ── Sidebar: date input, text input, selectbox — white background ── */
+[data-testid="stSidebar"] [data-testid="stDateInput"] input,
+[data-testid="stSidebar"] [data-testid="stDateInput"] > div > div,
+[data-testid="stSidebar"] [data-testid="stTextInput"] input,
+[data-testid="stSidebar"] [data-testid="stTextInput"] > div > div,
+[data-testid="stSidebar"] [data-baseweb="select"] > div,
+[data-testid="stSidebar"] [data-baseweb="popover"],
+[data-testid="stSidebar"] [data-baseweb="menu"] {
+    background-color: white !important;
+}
+[data-testid="stSidebar"] [data-baseweb="select"] span,
+[data-testid="stSidebar"] [data-baseweb="select"] input { color: #1C2B2B !important; }
+[data-testid="stSidebar"] [data-baseweb="option"] { background-color: white !important; color: #1C2B2B !important; }
+[data-testid="stSidebar"] [data-baseweb="option"]:hover { background-color: #E8F5EE !important; }
 
 .sb-logo { display:flex; align-items:center; gap:12px; padding-bottom:18px;
            border-bottom:1px solid #D1E7D9; margin-bottom:6px; }
@@ -684,6 +770,4 @@ else:
 
 # ── FOOTER ────────────────────────────────────────────────────────────────────
 st.divider()
-st.caption(
-    "UniWallet · Fundamentals & Methods of CS · University of St. Gallen · Spring 2026"
-)
+st.markdown('<div style="font-size:.75rem; color:#5A6B6B !important; text-align:center; padding:8px 0;">UniWallet · Fundamentals & Methods of CS · University of St. Gallen · Spring 2026</div>', unsafe_allow_html=True)

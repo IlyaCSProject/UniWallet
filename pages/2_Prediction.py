@@ -106,10 +106,44 @@ html, body, [class*="css"], .stApp {
 [data-testid="stSidebar"] .sb-logo-text .sb-sub { color: #5A6B6B !important; }
 [data-testid="stSidebar"] small { color: #5A6B6B !important; }
 
+/* ── Sidebar input widgets — white background, dark text ── */
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] [data-baseweb="input"] div,
+[data-testid="stSidebar"] [data-testid="stNumberInput-Input"],
+[data-testid="stSidebar"] [data-testid="stDateInput-Input"] {
+    background-color: white !important;
+    color: #1C2B2B !important;
+    border: 1px solid #D1E7D9 !important;
+}
+[data-testid="stSidebar"] button[data-testid="stNumberInput-StepUp"],
+[data-testid="stSidebar"] button[data-testid="stNumberInput-StepDown"],
+[data-testid="stSidebar"] [data-testid="stNumberInput"] button {
+    background-color: white !important;
+    color: #1C2B2B !important;
+}
+[data-testid="stSidebar"] [data-baseweb="input"] {
+    background-color: white !important;
+}
+
 /* ── Info / warning bars — dark text ── */
 [data-testid="stAlert"] p,
 [data-testid="stAlert"] span,
 div[data-baseweb="notification"] div { color: #1C2B2B !important; }
+
+/* ── Force all labels and captions to be dark ── */
+label, .stCaption, [data-testid="stCaption"],
+[data-testid="stWidgetLabel"] label,
+[data-testid="stWidgetLabel"] p,
+small { color: #5A6B6B !important; }
+
+/* ── Sidebar selectbox — white background, dark text ── */
+[data-testid="stSidebar"] [data-baseweb="select"] > div { background-color: white !important; }
+[data-testid="stSidebar"] [data-baseweb="select"] span,
+[data-testid="stSidebar"] [data-baseweb="select"] input { color: #1C2B2B !important; }
+[data-testid="stSidebar"] [data-baseweb="popover"],
+[data-testid="stSidebar"] [data-baseweb="menu"] { background-color: white !important; }
+[data-testid="stSidebar"] [data-baseweb="option"] { background-color: white !important; color: #1C2B2B !important; }
+[data-testid="stSidebar"] [data-baseweb="option"]:hover { background-color: #E8F5EE !important; }
 
 .sb-logo { display:flex; align-items:center; gap:12px; padding-bottom:18px;
            border-bottom:1px solid #D1E7D9; margin-bottom:6px; }
@@ -236,24 +270,27 @@ st.markdown(f"""
 <div style="background:linear-gradient(120deg,#1A5C38 0%,#2A8A56 100%);
             border-radius:14px; padding:28px 36px; margin-bottom:1.5rem;
             display:flex; align-items:center; gap:24px;">
-    <div style="background:rgba(255,255,255,0.15); border-radius:12px;
-                width:56px; height:56px; display:flex; align-items:center;
-                justify-content:center; flex-shrink:0; overflow:hidden;">
-        <img src="app/static/logo.png" width="52"
-             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-             style="border-radius:10px;">
-        <span style="font-size:1.5rem; font-weight:800; color:white; display:none;">W</span>
-    </div>
+    <svg width="54" height="54" viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+      <defs>
+        <linearGradient id="lgbg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#145232"/>
+          <stop offset="100%" stop-color="#2A8A56"/>
+        </linearGradient>
+      </defs>
+      <rect width="54" height="54" rx="14" fill="url(#lgbg)"/>
+      <polyline points="10,17 19,36 27,23 35,36 44,17"
+        stroke="white" stroke-width="3.8" fill="none"
+        stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="19" cy="36" r="2.8" fill="rgba(255,255,255,0.55)"/>
+      <circle cx="35" cy="36" r="2.8" fill="rgba(255,255,255,0.55)"/>
+      <line x1="10" y1="43" x2="44" y2="43"
+        stroke="rgba(255,255,255,0.22)" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
     <div>
-        <div style="font-size:1.4rem; font-weight:700; color:white; line-height:1.1; margin-bottom:2px;">
-            UniWallet
-        </div>
-        <div style="font-size:1.4rem; font-weight:700; color:white; line-height:1.1; margin-bottom:6px;">
-            Month-End Prediction
-        </div>
-        <div style="font-size:.88rem; color:rgba(255,255,255,0.8);">
-            University of St. Gallen · Track, analyse, and forecast your student finances
-        </div>
+        <h1 style="font-size:1.7rem; font-weight:700; color:white; margin:0;">Month-End Prediction</h1>
+        <p style="margin:6px 0 0; font-size:.88rem; color:rgba(255,255,255,0.8);">
+            UniWallet · University of St. Gallen · Track, analyse, and forecast your student finances
+        </p>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -413,4 +450,4 @@ st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
 # ── FOOTER ────────────────────────────────────────────────────────────────────
 st.divider()
-st.caption("UniWallet · Fundamentals & Methods of CS · University of St. Gallen · Spring 2026")
+st.markdown('<div style="font-size:.75rem; color:#5A6B6B; text-align:center; padding:8px 0;">UniWallet · Fundamentals & Methods of CS · University of St. Gallen · Spring 2026</div>', unsafe_allow_html=True)

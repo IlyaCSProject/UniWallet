@@ -243,6 +243,26 @@ html, body, [class*="css"], .stApp {
 /* ── Widget accent → green ── */
 [data-testid="stSlider"] [role="slider"] { background: #1A5C38 !important; border-color: #1A5C38 !important; }
 
+/* ── Number input + date input — white background, dark text ── */
+[data-testid="stNumberInput"] input,
+[data-testid="stDateInput"] input {
+    background-color: white !important;
+    color: #1C2B2B !important;
+    border: 1px solid #D1E7D9 !important;
+    border-radius: 8px !important;
+}
+[data-testid="stNumberInput"] button {
+    background-color: white !important;
+    color: #1C2B2B !important;
+    border: 1px solid #D1E7D9 !important;
+}
+[data-testid="stNumberInput"] button svg { fill: #1C2B2B !important; stroke: #1C2B2B !important; }
+[data-testid="stDateInput"] div[data-baseweb="input"] {
+    background-color: white !important;
+    border: 1px solid #D1E7D9 !important;
+}
+[data-testid="stDateInput"] div[data-baseweb="input"] * { color: #1C2B2B !important; }
+
 /* Multiselect selected tags — light green pill */
 [data-baseweb="tag"] { background-color: #E8F5EE !important; color: #1A5C38 !important;
                        border: 1px solid #B2DEC7 !important; }
@@ -279,10 +299,36 @@ html, body, [class*="css"], .stApp {
 [data-testid="stSidebar"] .sb-logo-text .sb-sub { color: #5A6B6B !important; }
 [data-testid="stSidebar"] small { color: #5A6B6B !important; }
 
+/* ── Sidebar input widgets — white background, dark text ── */
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] [data-baseweb="input"] div,
+[data-testid="stSidebar"] [data-testid="stNumberInput-Input"],
+[data-testid="stSidebar"] [data-testid="stDateInput-Input"] {
+    background-color: white !important;
+    color: #1C2B2B !important;
+    border: 1px solid #D1E7D9 !important;
+}
+[data-testid="stSidebar"] button[data-testid="stNumberInput-StepUp"],
+[data-testid="stSidebar"] button[data-testid="stNumberInput-StepDown"],
+[data-testid="stSidebar"] [data-testid="stNumberInput"] button {
+    background-color: white !important;
+    color: #1C2B2B !important;
+}
+[data-testid="stSidebar"] [data-baseweb="input"] {
+    background-color: white !important;
+}
+
 /* ── Info / warning bars — dark text ── */
 [data-testid="stAlert"] p,
 [data-testid="stAlert"] span,
 div[data-baseweb="notification"] div { color: #1C2B2B !important; }
+
+/* ── Force all labels and captions to be dark ── */
+label, .stCaption, [data-testid="stCaption"],
+[data-testid="stWidgetLabel"] label,
+[data-testid="stWidgetLabel"] p,
+.stNumberInput label, .stSelectbox label,
+small { color: #5A6B6B !important; }
 
 /* ── Sidebar logo ── */
 .sb-logo { display:flex; align-items:center; gap:12px; padding-bottom:18px;
@@ -661,24 +707,28 @@ with fx_left:
     st.plotly_chart(fig_inc, use_container_width=True)
 
     # ── Top categories this month ─────────────────────────────────────────────
+    # Exclude Utilities (fixed costs like rent) so the chart shows daily spending habits
     st.markdown("""<div style='font-size:.75rem; font-weight:600; text-transform:uppercase;
-        letter-spacing:.07em; color:#5A6B6B; margin-bottom:8px;'>Top Categories This Month</div>""",
+        letter-spacing:.07em; color:#5A6B6B; margin-bottom:8px;'>Top Spending Categories This Month</div>""",
         unsafe_allow_html=True)
 
-    this_m_exp = expenses_df[expenses_df["date"] >= this_month_start].copy()
+    this_m_exp = expenses_df[
+        (expenses_df["date"] >= this_month_start) &
+        (expenses_df["category"] != "Utilities")
+    ].copy()
     top_cats   = (this_m_exp.groupby("category")["amount"]
                   .sum().sort_values(ascending=False).head(5).reset_index())
-    max_amt    = top_cats["amount"].max() if len(top_cats) else 1
+    total_amt  = top_cats["amount"].sum() if len(top_cats) else 1
 
     rows_html = ""
     for _, row in top_cats.iterrows():
-        bar_pct = row["amount"] / max_amt * 100
+        bar_pct = row["amount"] / total_amt * 100
         rows_html += f"""
         <div style="margin-bottom:10px;">
           <div style="display:flex; justify-content:space-between; font-size:.78rem;
                       margin-bottom:4px; color:#1C2B2B;">
             <span style="font-weight:500;">{row['category']}</span>
-            <span style="color:#5A6B6B; font-weight:600;">CHF {row['amount']:,.2f}</span>
+            <span style="color:#5A6B6B; font-weight:600;">CHF {row['amount']:,.2f} ({bar_pct:.0f}%)</span>
           </div>
           <div style="height:6px; background:#E8F5EE; border-radius:99px; overflow:hidden;">
             <div style="width:{bar_pct:.1f}%; height:100%; background:#2A8A56;
@@ -702,7 +752,7 @@ with fx_right:
     # ── Allowance calculator ──────────────────────────────────────────────────
     st.markdown('<div class="calc-box">', unsafe_allow_html=True)
     st.markdown("**Allowance Calculator**")
-    st.caption("How much CHF does your EUR allowance actually buy?")
+    st.markdown('<div style="font-size:.75rem; color:#5A6B6B;">How much CHF does your EUR allowance actually buy?</div>', unsafe_allow_html=True)
 
     eur_input = st.number_input(
         "Monthly allowance (EUR)", min_value=100.0, max_value=10000.0,
@@ -844,17 +894,35 @@ def fmt_amount(row):
 
 recent["Amount"] = recent.apply(fmt_amount, axis=1)
 
-st.dataframe(
-    recent[["Date", "description", "category", "currency", "Amount"]].rename(
-        columns={"description": "Description", "category": "Category",
-                 "currency": "Ccy"}
-    ),
-    use_container_width=True, hide_index=True,
+# Build a light-themed HTML table
+display_df = recent[["Date", "description", "category", "currency", "Amount"]].rename(
+    columns={"description": "Description", "category": "Category", "currency": "Ccy"}
 )
+
+header_html = "".join(
+    f'<th style="padding:10px 14px; text-align:left; font-size:.78rem; font-weight:600; '
+    f'color:#5A6B6B; border-bottom:2px solid #D1E7D9;">{col}</th>'
+    for col in display_df.columns
+)
+
+body_html = ""
+for _, row in display_df.iterrows():
+    cells = "".join(
+        f'<td style="padding:9px 14px; font-size:.82rem; color:#1C2B2B; '
+        f'border-bottom:1px solid #D1E7D9;">{row[col]}</td>'
+        for col in display_df.columns
+    )
+    body_html += f"<tr>{cells}</tr>"
+
+st.markdown(f"""
+<div style="background:white; border:1.5px solid #D1E7D9; border-radius:12px; overflow:hidden;">
+  <table style="width:100%; border-collapse:collapse; background:white;">
+    <thead><tr style="background:#F5FBF7;">{header_html}</tr></thead>
+    <tbody>{body_html}</tbody>
+  </table>
+</div>""", unsafe_allow_html=True)
 
 
 # ── FOOTER ────────────────────────────────────────────────────────────────────
 st.divider()
-st.caption(
-    "UniWallet · Fundamentals & Methods of CS · University of St. Gallen · Spring 2026"
-)
+st.markdown('<div style="font-size:.75rem; color:#5A6B6B; text-align:center; padding:8px 0;">UniWallet · Fundamentals & Methods of CS · University of St. Gallen · Spring 2026</div>', unsafe_allow_html=True)
