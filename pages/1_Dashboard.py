@@ -750,7 +750,6 @@ with fx_right:
     st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
     # ── Allowance calculator ──────────────────────────────────────────────────
-    st.markdown('<div class="calc-box">', unsafe_allow_html=True)
     st.markdown("**Allowance Calculator**")
     st.markdown('<div style="font-size:.75rem; color:#5A6B6B;">How much CHF does your EUR allowance actually buy?</div>', unsafe_allow_html=True)
 
@@ -809,8 +808,6 @@ with fx_right:
                 1 {other_ccy} = CHF {1/rates_from_chf[other_ccy]:.4f}
             </span>
         </div>""", unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ── ML FORECAST ───────────────────────────────────────────────────────────────
