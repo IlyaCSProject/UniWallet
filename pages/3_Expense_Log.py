@@ -3,12 +3,13 @@
 # University of St. Gallen  ·  Fundamentals & Methods of CS  ·  Spring 2026
 # =============================================================================
 # HOW TO RUN:
-#   pip install streamlit plotly pandas numpy
+#   pip install streamlit plotly pandas numpy requests
 #   streamlit run log_exp_alex.py
 # =============================================================================
 
 import sqlite3
 import os
+import requests
 from datetime import datetime, date
 
 import pandas as pd
@@ -33,7 +34,7 @@ def get_connection() -> sqlite3.Connection:
     return sqlite3.connect(DB_PATH)
 
 def init_db():
-    """Create the expenses table if it does not exist yet."""
+    """Create the expenses table if it does not exist yet, and migrate if needed."""
     with get_connection() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS expenses (
@@ -43,8 +44,20 @@ def init_db():
                 category    TEXT    NOT NULL,
                 currency    TEXT    NOT NULL DEFAULT 'CHF',
                 amount      REAL    NOT NULL,
+                amount_chf  REAL,
                 note        TEXT
             )
+        """)
+        # Migration: add amount_chf column for existing databases
+        try:
+            conn.execute("ALTER TABLE expenses ADD COLUMN amount_chf REAL")
+        except sqlite3.OperationalError:
+            pass  # column already exists
+        # For existing CHF rows with no amount_chf, set it equal to amount
+        conn.execute("""
+            UPDATE expenses
+            SET amount_chf = amount
+            WHERE amount_chf IS NULL AND currency = 'CHF'
         """)
         conn.commit()
 
@@ -64,6 +77,26 @@ CATEGORIES = [
 
 CURRENCIES = ["CHF", "EUR", "USD", "GBP", "JPY", "SEK", "CAD", "AUD"]
 
+def convert_to_chf(amount: float, currency: str) -> float | None:
+    """
+    Convert a signed amount to CHF using the Frankfurter API.
+    Returns None if the conversion fails.
+    """
+    if currency == "CHF":
+        return amount
+    try:
+        sign = 1 if amount >= 0 else -1
+        resp = requests.get(
+            "https://api.frankfurter.app/latest",
+            params={"amount": abs(amount), "from": currency, "to": "CHF"},
+            timeout=5,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return round(sign * data["rates"]["CHF"], 2)
+    except Exception:
+        return None
+
 def load_expenses() -> pd.DataFrame:
     with get_connection() as conn:
         df = pd.read_sql_query(
@@ -71,18 +104,21 @@ def load_expenses() -> pd.DataFrame:
         )
     if df.empty:
         return pd.DataFrame(columns=["id", "date", "description", "category",
-                                     "currency", "amount", "note"])
+                                     "currency", "amount", "amount_chf", "note"])
     df["date"] = pd.to_datetime(df["date"])
+    # Fallback: if amount_chf is NULL (old non-CHF records), use original amount
+    df["amount_chf"] = df["amount_chf"].fillna(df["amount"])
     return df
 
 def insert_expense(date_val: date, description: str, category: str,
-                   currency: str, amount: float, note: str):
+                   currency: str, amount: float, amount_chf: float, note: str):
     with get_connection() as conn:
         conn.execute(
-            """INSERT INTO expenses (date, description, category, currency, amount, note)
-               VALUES (?, ?, ?, ?, ?, ?)""",
+            """INSERT INTO expenses
+               (date, description, category, currency, amount, amount_chf, note)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (date_val.strftime("%Y-%m-%d"), description, category,
-             currency, amount, note or ""),
+             currency, amount, amount_chf, note or ""),
         )
         conn.commit()
 
@@ -92,14 +128,16 @@ def delete_expense(expense_id: int):
         conn.commit()
 
 def update_expense(expense_id: int, date_val: date, description: str,
-                   category: str, currency: str, amount: float, note: str):
+                   category: str, currency: str, amount: float,
+                   amount_chf: float, note: str):
     with get_connection() as conn:
         conn.execute(
             """UPDATE expenses
-               SET date=?, description=?, category=?, currency=?, amount=?, note=?
+               SET date=?, description=?, category=?, currency=?,
+                   amount=?, amount_chf=?, note=?
                WHERE id=?""",
             (date_val.strftime("%Y-%m-%d"), description, category,
-             currency, amount, note or "", expense_id),
+             currency, amount, amount_chf, note or "", expense_id),
         )
         conn.commit()
 
@@ -164,6 +202,8 @@ html, body, [class*="css"], .stApp {
              padding:12px 18px; color:#065F46; font-size:.85rem; font-weight:500; }
 .toast-err { background:#FEE2E2; border:1px solid #FCA5A5; border-radius:10px;
              padding:12px 18px; color:#991B1B; font-size:.85rem; font-weight:500; }
+.toast-info { background:#DBEAFE; border:1px solid #93C5FD; border-radius:10px;
+              padding:12px 18px; color:#1D4ED8; font-size:.85rem; font-weight:500; }
 
 /* ── Category pill ── */
 .cat-pill {
@@ -208,11 +248,8 @@ html, body, [class*="css"], .stApp {
 [data-testid="stSidebar"] { background-color: #F5FBF7 !important; border-right: 1px solid #D1E7D9; }
 [data-testid="stSidebarNav"] { display: none !important; }
 
-
 /* ── Force ALL sidebar text to be dark and readable ── */
-[data-testid="stSidebar"] * {
-    color: #1C2B2B !important;
-}
+[data-testid="stSidebar"] * { color: #1C2B2B !important; }
 [data-testid="stSidebar"] a { color: #1A5C38 !important; text-decoration: none !important; }
 [data-testid="stSidebar"] a:hover { background-color: #E0F0E8 !important; }
 [data-testid="stSidebar"] .sb-logo-text .sb-sub { color: #5A6B6B !important; }
@@ -233,9 +270,7 @@ html, body, [class*="css"], .stApp {
     background-color: white !important;
     color: #1C2B2B !important;
 }
-[data-testid="stSidebar"] [data-baseweb="input"] {
-    background-color: white !important;
-}
+[data-testid="stSidebar"] [data-baseweb="input"] { background-color: white !important; }
 
 /* ── Info / warning bars — dark text ── */
 [data-testid="stAlert"] p,
@@ -283,9 +318,7 @@ button[data-testid="stFormSubmitButton"] button,
     color: white !important;
     border: none !important;
 }
-.stButton button:hover {
-    background-color: #2A8A56 !important;
-}
+.stButton button:hover { background-color: #2A8A56 !important; }
 
 /* ── Download button ── */
 [data-testid="stDownloadButton"] button {
@@ -338,7 +371,6 @@ button[data-testid="stFormSubmitButton"] button,
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
 
-    # Logo
     st.markdown("""
     <div class="sb-logo">
       <svg width="42" height="42" viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
@@ -364,7 +396,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # Navigation
     st.page_link("app.py", label="Home")
     st.page_link("pages/1_Dashboard.py", label="Dashboard")
     st.page_link("pages/2_Prediction.py", label="Prediction")
@@ -372,7 +403,6 @@ with st.sidebar:
 
     st.divider()
 
-    # ── Sidebar filters ───────────────────────────────────────────────────────
     st.markdown("**Filters**")
     filter_cats = st.multiselect(
         "Categories", CATEGORIES, default=CATEGORIES, key="filter_cats"
@@ -403,7 +433,6 @@ with st.sidebar:
 # ── LOAD & FILTER DATA ────────────────────────────────────────────────────────
 df_all = load_expenses()
 
-# Apply sidebar filters
 if not df_all.empty:
     d_start = pd.Timestamp(filter_dates[0]) if len(filter_dates) == 2 else df_all["date"].min()
     d_end   = pd.Timestamp(filter_dates[1]) if len(filter_dates) == 2 else df_all["date"].max()
@@ -451,13 +480,12 @@ st.markdown("""
 
 # ── KPI SUMMARY ───────────────────────────────────────────────────────────────
 if not df.empty:
-    expenses_only = df[df["amount"] < 0]
-    income_only   = df[df["amount"] > 0]
+    expenses_only = df[df["amount_chf"] < 0]
+    income_only   = df[df["amount_chf"] > 0]
 
-    total_exp    = expenses_only["amount"].abs().sum()
-    total_inc    = income_only["amount"].sum()
-    n_entries    = len(df)
-    avg_expense  = expenses_only["amount"].abs().mean() if len(expenses_only) else 0.0
+    total_exp   = expenses_only["amount_chf"].abs().sum()
+    total_inc   = income_only["amount_chf"].sum()
+    avg_expense = expenses_only["amount_chf"].abs().mean() if len(expenses_only) else 0.0
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
@@ -493,10 +521,8 @@ else:
 
 
 # ── ADD NEW EXPENSE ───────────────────────────────────────────────────────────
-st.markdown('<div class="sec-header">Add New Entry</div>', unsafe_allow_html=True)
-
 with st.container():
-    st.markdown('<div class="form-card">', unsafe_allow_html=True)
+    st.markdown('<div class="form-card"><div class="sec-header" style="margin-top:0">Add New Entry</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([2, 3, 2])
     with col1:
@@ -504,7 +530,7 @@ with st.container():
     with col2:
         new_desc = st.text_input("Description", placeholder="e.g. Mensa HSG, SBB…", key="new_desc")
     with col3:
-        new_cat  = st.selectbox("Category", CATEGORIES, key="new_cat")
+        new_cat = st.selectbox("Category", CATEGORIES, key="new_cat")
 
     col4, col5, col6 = st.columns([2, 2, 3])
     with col4:
@@ -518,6 +544,15 @@ with st.container():
             value=10.00, step=0.50, format="%.2f", key="new_amount"
         )
 
+    # Live conversion hint when a non-CHF currency is selected
+    if new_currency != "CHF":
+        st.markdown(
+            f'<div class="toast-info">💱 Amount will be automatically converted from '
+            f'<strong>{new_currency}</strong> to <strong>CHF</strong> at the current '
+            f'exchange rate via Frankfurter API when you submit.</div>',
+            unsafe_allow_html=True,
+        )
+
     new_note = st.text_input("Note (optional)", placeholder="Any extra detail…", key="new_note")
 
     btn_col, _, _ = st.columns([1, 3, 3])
@@ -528,33 +563,57 @@ with st.container():
 
 if submitted:
     if not new_desc.strip():
-        st.markdown('<div class="toast-err">Description cannot be empty.</div>',
+        st.markdown('<div class="toast-err">⚠️ Description cannot be empty.</div>',
                     unsafe_allow_html=True)
     else:
         signed_amount = -abs(new_amount) if "Expense" in entry_type else abs(new_amount)
+
+        if new_currency == "CHF":
+            amount_chf = signed_amount
+            conversion_note = ""
+        else:
+            with st.spinner(f"Converting {new_currency} → CHF…"):
+                amount_chf = convert_to_chf(signed_amount, new_currency)
+            if amount_chf is None:
+                st.markdown(
+                    '<div class="toast-err">⚠️ Currency conversion failed (API unreachable). '
+                    'Please check your connection and try again.</div>',
+                    unsafe_allow_html=True,
+                )
+                st.stop()
+            conversion_note = (
+                f" &nbsp;·&nbsp; {new_currency} {abs(signed_amount):,.2f} "
+                f"→ CHF {abs(amount_chf):,.2f}"
+            )
+
         insert_expense(new_date, new_desc.strip(), new_cat,
-                       new_currency, signed_amount, new_note.strip())
-        st.markdown('<div class="toast-ok">Entry added successfully!</div>',
-                    unsafe_allow_html=True)
+                       new_currency, signed_amount, amount_chf, new_note.strip())
+        st.markdown(
+            f'<div class="toast-ok">✅ Entry added successfully!{conversion_note}</div>',
+            unsafe_allow_html=True,
+        )
+        for key in ["new_date", "new_desc", "new_cat", "new_currency",
+                    "new_type", "new_amount", "new_note"]:
+            if key in st.session_state:
+                del st.session_state[key]
         st.rerun()
 
 
 # ── CHARTS ────────────────────────────────────────────────────────────────────
-if not df.empty and len(df[df["amount"] < 0]) > 0:
+if not df.empty and len(df[df["amount_chf"] < 0]) > 0:
     st.markdown('<div class="sec-header">Spending Overview</div>', unsafe_allow_html=True)
 
-    expenses_df = df[df["amount"] < 0].copy()
-    expenses_df["amount_abs"] = expenses_df["amount"].abs()
+    expenses_df = df[df["amount_chf"] < 0].copy()
+    expenses_df["amount_abs"] = expenses_df["amount_chf"].abs()
 
     ch1, ch2 = st.columns(2)
 
-    # Pie: by category
     with ch1:
         cat_totals = expenses_df.groupby("category")["amount_abs"].sum().reset_index()
         fig_pie = px.pie(
             cat_totals, values="amount_abs", names="category",
             hole=0.45, color_discrete_sequence=CHART_COLORS,
-            title="Expenses by Category",
+            title="Expenses by Category (CHF)",
         )
         fig_pie.update_traces(
             textposition="inside", textinfo="percent+label", textfont_size=11,
@@ -569,7 +628,6 @@ if not df.empty and len(df[df["amount"] < 0]) > 0:
         )
         st.plotly_chart(fig_pie, use_container_width=True)
 
-    # Bar: daily spending
     with ch2:
         daily_bar = (expenses_df.groupby("date")["amount_abs"].sum()
                      .reset_index().sort_values("date"))
@@ -577,7 +635,7 @@ if not df.empty and len(df[df["amount"] < 0]) > 0:
             daily_bar, x="date", y="amount_abs",
             labels={"date": "", "amount_abs": "CHF"},
             color_discrete_sequence=[GREEN_MID],
-            title="Daily Spending",
+            title="Daily Spending (CHF)",
         )
         fig_bar.update_traces(
             marker_line_width=0,
@@ -595,7 +653,6 @@ if not df.empty and len(df[df["amount"] < 0]) > 0:
         )
         st.plotly_chart(fig_bar, use_container_width=True)
 
-    # Cumulative line
     st.markdown('<div class="sec-header">Cumulative Spending Over Time</div>',
                 unsafe_allow_html=True)
     daily_cum = daily_bar.copy().sort_values("date")
@@ -613,8 +670,7 @@ if not df.empty and len(df[df["amount"] < 0]) > 0:
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Inter", color="#111111", size=12),
         height=260, margin=dict(t=10, b=40, l=60, r=20),
-        xaxis=dict(showgrid=False, title="",
-                   tickfont=dict(color="#111111")),
+        xaxis=dict(showgrid=False, title="", tickfont=dict(color="#111111")),
         yaxis=dict(showgrid=True, gridcolor="#E8F5EE", title="CHF",
                    tickfont=dict(color="#111111"),
                    title_font=dict(color="#111111")),
@@ -635,7 +691,6 @@ if df.empty:
     </div>
     """, unsafe_allow_html=True)
 else:
-    # Sorting control
     sort_col, _, del_col = st.columns([2, 3, 2])
     with sort_col:
         sort_by = st.selectbox(
@@ -647,28 +702,32 @@ else:
         show_delete = st.toggle("Enable delete / edit", value=False, key="show_delete")
 
     sort_map = {
-        "Date (newest)":   ("date", False),
-        "Date (oldest)":   ("date", True),
-        "Amount (highest)":("amount", False),
-        "Amount (lowest)": ("amount", True),
-        "Category":        ("category", True),
+        "Date (newest)":    ("date", False),
+        "Date (oldest)":    ("date", True),
+        "Amount (highest)": ("amount_chf", False),
+        "Amount (lowest)":  ("amount_chf", True),
+        "Category":         ("category", True),
     }
     sort_field, sort_asc = sort_map[sort_by]
     df_sorted = df.sort_values(sort_field, ascending=sort_asc).reset_index(drop=True)
 
-    # Display the dataframe
     display_df = df_sorted.copy()
-    display_df["Date"]        = display_df["date"].dt.strftime("%d %b %Y")
-    display_df["Amount (CHF)"] = display_df["amount"].apply(
-        lambda x: f"+{x:,.2f}" if x > 0 else f"{x:,.2f}"
+    display_df["Date"] = display_df["date"].dt.strftime("%d %b %Y")
+
+    # Original amount with its currency
+    display_df["Original"] = display_df.apply(
+        lambda r: f"{r['currency']} {'+' if r['amount'] > 0 else ''}{r['amount']:,.2f}",
+        axis=1,
+    )
+    # CHF equivalent
+    display_df["CHF Value"] = display_df["amount_chf"].apply(
+        lambda x: f"{'+'  if x > 0 else ''}{x:,.2f}"
     )
     display_df["Note"] = display_df["note"].fillna("").replace("", "—")
 
     st.dataframe(
-        display_df[["Date", "description", "category", "currency",
-                    "Amount (CHF)", "Note"]].rename(
-            columns={"description": "Description", "category": "Category",
-                     "currency": "Ccy"}
+        display_df[["Date", "description", "category", "Original", "CHF Value", "Note"]].rename(
+            columns={"description": "Description", "category": "Category"}
         ),
         use_container_width=True,
         hide_index=True,
@@ -682,7 +741,8 @@ else:
         id_options = df_sorted["id"].tolist()
         label_map  = {
             row["id"]: f"#{row['id']}  {row['date'].strftime('%d %b %Y')}  |  "
-                       f"{row['description']}  |  CHF {row['amount']:+,.2f}"
+                       f"{row['description']}  |  {row['currency']} {row['amount']:+,.2f}"
+                       f"  (CHF {row['amount_chf']:+,.2f})"
             for _, row in df_sorted.iterrows()
         }
 
@@ -704,10 +764,10 @@ else:
             with ec2:
                 e_desc = st.text_input("Description", value=sel_row["description"], key="e_desc")
             with ec3:
-                e_cat  = st.selectbox("Category", CATEGORIES,
-                                      index=CATEGORIES.index(sel_row["category"])
-                                      if sel_row["category"] in CATEGORIES else 0,
-                                      key="e_cat")
+                e_cat = st.selectbox("Category", CATEGORIES,
+                                     index=CATEGORIES.index(sel_row["category"])
+                                     if sel_row["category"] in CATEGORIES else 0,
+                                     key="e_cat")
             ec4, ec5, ec6 = st.columns([2, 2, 3])
             with ec4:
                 e_ccy = st.selectbox("Currency", CURRENCIES,
@@ -716,8 +776,7 @@ else:
                                      key="e_ccy")
             with ec5:
                 e_type = st.radio(
-                    "Type",
-                    ["Expense (−)", "Income (+)"],
+                    "Type", ["Expense (−)", "Income (+)"],
                     index=0 if sel_row["amount"] < 0 else 1,
                     horizontal=True, key="e_type",
                 )
@@ -731,32 +790,42 @@ else:
 
             if st.button("Save Changes", key="save_edit"):
                 if not e_desc.strip():
-                    st.markdown('<div class="toast-err">Description cannot be empty.</div>',
+                    st.markdown('<div class="toast-err">⚠️ Description cannot be empty.</div>',
                                 unsafe_allow_html=True)
                 else:
                     signed = -abs(e_amount) if "Expense" in e_type else abs(e_amount)
-                    update_expense(selected_id, e_date, e_desc.strip(),
-                                   e_cat, e_ccy, signed, e_note.strip())
-                    st.markdown('<div class="toast-ok">Entry updated.</div>',
-                                unsafe_allow_html=True)
-                    st.rerun()
+                    with st.spinner(f"Converting {e_ccy} → CHF…"):
+                        e_amount_chf = convert_to_chf(signed, e_ccy)
+                    if e_amount_chf is None:
+                        st.markdown(
+                            '<div class="toast-err">⚠️ Currency conversion failed. '
+                            'Please try again.</div>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        update_expense(selected_id, e_date, e_desc.strip(),
+                                       e_cat, e_ccy, signed, e_amount_chf, e_note.strip())
+                        st.markdown('<div class="toast-ok">✅ Entry updated.</div>',
+                                    unsafe_allow_html=True)
+                        st.rerun()
 
         with del_tab:
             st.warning(
                 f"You are about to permanently delete entry **#{selected_id}** — "
                 f"**{sel_row['description']}** on {sel_row['date'].strftime('%d %b %Y')} "
-                f"(CHF {sel_row['amount']:+,.2f}). This cannot be undone."
+                f"({sel_row['currency']} {sel_row['amount']:+,.2f} / "
+                f"CHF {sel_row['amount_chf']:+,.2f}). This cannot be undone."
             )
             if st.button("Confirm Delete", key="confirm_delete"):
                 delete_expense(selected_id)
-                st.markdown('<div class="toast-ok">Entry deleted.</div>',
+                st.markdown('<div class="toast-ok">✅ Entry deleted.</div>',
                             unsafe_allow_html=True)
                 st.rerun()
 
     # ── CSV Export ────────────────────────────────────────────────────────────
     st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
     export_df = df_sorted[["date", "description", "category",
-                            "currency", "amount", "note"]].copy()
+                            "currency", "amount", "amount_chf", "note"]].copy()
     export_df["date"] = export_df["date"].dt.strftime("%Y-%m-%d")
     csv_data = export_df.to_csv(index=False).encode("utf-8")
 
