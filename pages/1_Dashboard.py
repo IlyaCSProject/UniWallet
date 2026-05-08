@@ -141,7 +141,21 @@ def generate_sample_transactions() -> pd.DataFrame:
     return df.sort_values("date", ascending=False).reset_index(drop=True)
 
 
-df_all = generate_sample_transactions()
+# ── LOAD DATA ─────────────────────────────────────────────────────────────────
+# Try to read real transactions from the shared SQLite database first.
+# If the database is empty or missing, fall back to sample data so the
+# dashboard still has something to show. This means: as soon as the user
+# logs their first real expense in the Expense Log page, the dashboard
+# will automatically switch from sample data to their real data.
+try:
+    import sys, os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    from database.db_helper import get_expenses
+    df_all = get_expenses()
+    using_sample = False
+except Exception:
+    df_all = generate_sample_transactions()
+    using_sample = True
 
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
@@ -500,6 +514,10 @@ st.markdown("""
     </div>
   </div>
 </div>""", unsafe_allow_html=True)
+
+# Show a small notice when using sample data (i.e. the database is empty)
+if using_sample:
+    st.info("Showing sample data. Log your first expense in the Expense Log to see your real numbers here.")
 
 
 # ── KPI CARDS ─────────────────────────────────────────────────────────────────
