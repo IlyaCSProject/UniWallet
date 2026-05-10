@@ -1,16 +1,3 @@
-# =============================================================================
-# UniWallet — Prediction Page
-# University of St. Gallen  ·  Fundamentals & Methods of CS  ·  Spring 2026
-# =============================================================================
-# PURPOSE:
-#   This page uses a Linear Regression model (scikit-learn) trained on the
-#   user's daily spending history to predict their total spending by month-end.
-#   The forecast is colour-coded green (under budget) or red (over budget).
-#
-# HOW TO RUN:
-#   streamlit run pages/3_Prediction.py
-# =============================================================================
-
 import calendar
 from datetime import datetime, timedelta
 import random
@@ -21,15 +8,15 @@ import plotly.graph_objects as go
 import streamlit as st
 from sklearn.linear_model import LinearRegression  # ML model
 
-# ── PAGE CONFIG ───────────────────────────────────────────────────────────────
+# Page config
 st.set_page_config(page_title="UniWallet · Prediction", page_icon="W", layout="wide")
 
-# ── COLOUR PALETTE (matches dashboard.py) ────────────────────────────────────
+# Colour palette (matches dashboard.py)
 GREEN_DARK   = "#1A5C38"
 GREEN_MID    = "#2A8A56"
 GREEN_LIGHT  = "#4DB87A"
 
-# ── CSS STYLING (matches dashboard.py exactly) ───────────────────────────────
+# Styling (matches dashboard)
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -62,7 +49,7 @@ html, body, [class*="css"], .stApp {
 .page-header h1 { font-size: 1.7rem; font-weight: 700; margin: 0; color: white; }
 .page-header p  { margin: 6px 0 0; font-size: .88rem; opacity: .8; color: white; }
 
-/* ── Forecast banner — made bigger ── */
+/* Forecast banner — made bigger */
 .forecast-banner {
     background: linear-gradient(135deg, #1A5C38 0%, #2A8A56 100%);
     border-radius: 16px; padding: 36px 36px; color: white; margin-bottom: 1rem;
@@ -77,7 +64,7 @@ html, body, [class*="css"], .stApp {
 .fb-status { font-size: 1rem; opacity: .95; margin-bottom: 8px; font-weight: 500; }
 .fb-note   { font-size: .88rem; opacity: .8; margin-bottom: 20px; }
 
-/* ── Progress bar ── */
+/* Progress bar */
 .progress-wrap {
     background: rgba(255,255,255,0.25); border-radius: 99px; height: 14px;
     overflow: hidden; margin: 10px 0 6px;
@@ -85,19 +72,19 @@ html, body, [class*="css"], .stApp {
 .progress-fill { height: 100%; border-radius: 99px; background: white; transition: width .4s ease; }
 .progress-label { font-size: .78rem; opacity: .85; }
 
-/* ── Tip box ── */
+/* Tip box */
 .tip-box {
     background: #F0FAF4; border: 1.5px solid #D1E7D9;
     border-radius: 10px; padding: 14px 18px;
     font-size: .83rem; color: #1C2B2B; margin-top: .75rem;
 }
 
-/* ── Sidebar ── */
+/* Sidebar */
 [data-testid="stSidebar"] { background-color: #F5FBF7 !important; border-right: 1px solid #D1E7D9; }
 [data-testid="stSidebarNav"] { display: none !important; }
 
 
-/* ── Force ALL sidebar text to be dark and readable ── */
+/* Force ALL sidebar text to be dark and readable */
 [data-testid="stSidebar"] * {
     color: #1C2B2B !important;
 }
@@ -106,7 +93,7 @@ html, body, [class*="css"], .stApp {
 [data-testid="stSidebar"] .sb-logo-text .sb-sub { color: #5A6B6B !important; }
 [data-testid="stSidebar"] small { color: #5A6B6B !important; }
 
-/* ── Sidebar input widgets — white background, dark text ── */
+/* Sidebar input widgets — white background, dark text */
 [data-testid="stSidebar"] input,
 [data-testid="stSidebar"] [data-baseweb="input"] div,
 [data-testid="stSidebar"] [data-testid="stNumberInput-Input"],
@@ -125,18 +112,18 @@ html, body, [class*="css"], .stApp {
     background-color: white !important;
 }
 
-/* ── Info / warning bars — dark text ── */
+/* Info / warning bars — dark text */
 [data-testid="stAlert"] p,
 [data-testid="stAlert"] span,
 div[data-baseweb="notification"] div { color: #1C2B2B !important; }
 
-/* ── Force all labels and captions to be dark ── */
+/* Force all labels and captions to be dark */
 label, .stCaption, [data-testid="stCaption"],
 [data-testid="stWidgetLabel"] label,
 [data-testid="stWidgetLabel"] p,
 small { color: #5A6B6B !important; }
 
-/* ── Sidebar selectbox — white background, dark text ── */
+/* Sidebar selectbox — white background, dark text */
 [data-testid="stSidebar"] [data-baseweb="select"] > div { background-color: white !important; }
 [data-testid="stSidebar"] [data-baseweb="select"] span,
 [data-testid="stSidebar"] [data-baseweb="select"] input { color: #1C2B2B !important; }
@@ -153,7 +140,7 @@ small { color: #5A6B6B !important; }
 """, unsafe_allow_html=True)
 
 
-# ── SAMPLE DATA ───────────────────────────────────────────────────────────────
+# Sample data
 # Same generator as dashboard.py so both pages show consistent data
 # while the real SQLite database is not yet connected.
 EUR_TO_CHF_DATA = 0.947
@@ -199,7 +186,7 @@ def generate_sample_transactions() -> pd.DataFrame:
     return df.sort_values("date", ascending=False).reset_index(drop=True)
 
 
-# ── LOAD DATA ─────────────────────────────────────────────────────────────────
+# Load data
 # Try real database first, fall back to sample data if not ready yet
 try:
     import sys, os
@@ -213,7 +200,7 @@ except Exception:
     using_sample = True
 
 
-# ── SIDEBAR ───────────────────────────────────────────────────────────────
+# Sidebar
 with st.sidebar:
     # Logo (same SVG as dashboard)
     st.markdown("""
@@ -265,7 +252,7 @@ with st.sidebar:
     st.caption("v0.1 · HSG · Spring 2026")
 
 
-# ── PAGE HEADER ───────────────────────────────────────────────────────────────
+# Page header
 st.markdown(f"""
 <div style="background:linear-gradient(120deg,#1A5C38 0%,#2A8A56 100%);
             border-radius:14px; padding:28px 36px; margin-bottom:1.5rem;
@@ -299,7 +286,7 @@ if using_sample:
     st.info("Database not connected yet — showing sample data. Your page is working correctly!")
 
 
-# ── FILTER TO CURRENT MONTH EXPENSES ─────────────────────────────────────────
+# Filter to current month expenses
 # Keep only negative amounts (expenses), make them positive for maths
 month_start  = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 expenses_df  = df_all[df_all["amount_original"] < 0].copy()
@@ -311,7 +298,7 @@ if len(month_exp_df) == 0:
     st.stop()
 
 
-# ── PREPARE TRAINING DATA ─────────────────────────────────────────────────────
+# Prepare training data
 # Group by day → cumulative spending. Model learns: day number → total spent.
 daily_m = (month_exp_df.groupby(month_exp_df["date"].dt.date)["amount"]
            .sum().reset_index().sort_values("date"))
@@ -329,7 +316,7 @@ spent_so_far   = float(y[-1]) if len(y) > 0 else 0.0
 avg_daily      = spent_so_far / today.day if today.day > 0 else 0.0
 
 
-# ── LINEAR REGRESSION (scikit-learn) ─────────────────────────────────────────
+# Linear regression (scikit-learn)
 # Train on days so far, predict total by end of month
 if len(X) >= 2:
     model = LinearRegression()
@@ -347,7 +334,7 @@ under_budget = projected_total <= monthly_budget
 difference   = abs(monthly_budget - projected_total)
 
 
-# ── FORECAST BANNER + CHART ───────────────────────────────────────────────────
+# Forecast banner + chart
 left_col, right_col = st.columns([1, 2])
 
 with left_col:
@@ -427,7 +414,7 @@ with right_col:
     st.plotly_chart(fig, use_container_width=True)
 
 
-# ── KPI CARDS ROW ─────────────────────────────────────────────────────────────
+# KPI cards row
 st.markdown('<div class="sec-header">This Month at a Glance</div>', unsafe_allow_html=True)
 
 k1, k2, k3, k4 = st.columns(4)
@@ -448,6 +435,6 @@ for col, label, value, cls in cards:
 st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
 
-# ── FOOTER ────────────────────────────────────────────────────────────────────
+# Footer
 st.divider()
 st.markdown('<div style="font-size:.75rem; color:#5A6B6B; text-align:center; padding:8px 0;">UniWallet · Fundamentals & Methods of CS · University of St. Gallen · Spring 2026</div>', unsafe_allow_html=True)

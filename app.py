@@ -1,14 +1,10 @@
-# =============================================================================
-# UniWallet — Home Page
-# University of St. Gallen  ·  Fundamentals & Methods of CS  ·  Spring 2026
-# =============================================================================
+# UniWallet - Home page
 
 import streamlit as st
 
-# ── PAGE CONFIG ──────────────────────────────────────────────────────────────
 st.set_page_config(page_title="UniWallet", page_icon="W", layout="wide")
 
-# ── CSS (matches dashboard exactly) ──────────────────────────────────────────
+# Styling
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -19,45 +15,30 @@ html, body, [class*="css"], .stApp {
     color: #1C2B2B;
 }
 
-/* ── Sidebar ── */
 [data-testid="stSidebar"] { background-color: #F5FBF7 !important; border-right: 1px solid #D1E7D9; }
 [data-testid="stSidebarNav"] { display: none !important; }
 
-/* ── Force ALL sidebar text to be dark and readable ── */
-[data-testid="stSidebar"] * {
-    color: #1C2B2B !important;
-}
+[data-testid="stSidebar"] * { color: #1C2B2B !important; }
 [data-testid="stSidebar"] a { color: #1A5C38 !important; text-decoration: none !important; }
 [data-testid="stSidebar"] a:hover { background-color: #E0F0E8 !important; }
 [data-testid="stSidebar"] .sb-logo-text .sb-sub { color: #5A6B6B !important; }
 [data-testid="stSidebar"] small { color: #5A6B6B !important; }
 
-/* ── Sidebar logo ── */
 .sb-logo { display:flex; align-items:center; gap:12px; padding-bottom:18px;
            border-bottom:1px solid #D1E7D9; margin-bottom:6px; }
 .sb-logo-text .sb-name { font-size:1.15rem; font-weight:700; color:#1A5C38 !important; line-height:1.2; }
 .sb-logo-text .sb-sub  { font-size:.68rem; color:#5A6B6B !important; letter-spacing:.03em; }
-
-/* ── Page header ── */
-.page-header {
-    background: linear-gradient(120deg, #1A5C38 0%, #2A8A56 100%);
-    border-radius: 14px; padding: 28px 36px; margin-bottom: 1.5rem;
-}
-.page-header h1 { font-size: 1.7rem; font-weight: 700; margin: 0; color: white !important; }
-.page-header p  { margin: 6px 0 0; font-size: .88rem; opacity: .8; color: white !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── SIDEBAR (identical to dashboard) ─────────────────────────────────────────
+# Sidebar
 with st.sidebar:
-
-    # ── Logo ─────────────────────────────────────────────────────────────────
     st.markdown("""
     <div class="sb-logo">
       <svg width="42" height="42" viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="sb-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stop-color="#145232"/>
+            <stop offset="0%" stop-color="#145232"/>
             <stop offset="100%" stop-color="#2A8A56"/>
           </linearGradient>
         </defs>
@@ -77,16 +58,15 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Navigation ───────────────────────────────────────────────────────────
     st.page_link("app.py", label="Home")
     st.page_link("pages/1_Dashboard.py", label="Dashboard")
     st.page_link("pages/2_Prediction.py", label="Prediction")
     st.page_link("pages/3_Expense_Log.py", label="Expense Log")
 
     st.divider()
-    st.caption("v0.1 · HSG · Spring 2026")
+    st.caption("v0.1 - HSG - Spring 2026")
 
-# ── PAGE CONTENT ─────────────────────────────────────────────────────────────
+# Page header banner
 st.markdown("""
 <div style="background:linear-gradient(120deg,#1A5C38 0%,#2A8A56 100%);
             border-radius:14px; padding:40px 36px; margin-bottom:1.5rem; text-align:center;">
@@ -113,12 +93,12 @@ st.markdown("""
         Track, analyse, and forecast your student finances
     </p>
     <p style="font-size:.82rem; color:rgba(255,255,255,0.6); margin:8px 0 0;">
-        University of St. Gallen · Fundamentals &amp; Methods of CS · Spring 2026
+        University of St. Gallen - Fundamentals &amp; Methods of CS - Spring 2026
     </p>
 </div>
 """, unsafe_allow_html=True)
 
-# ── CLICKABLE PAGE CARDS ─────────────────────────────────────────────────────
+# Page cards linking to each section
 c1, c2, c3 = st.columns(3)
 
 with c1:
@@ -154,6 +134,6 @@ with c3:
     </div>""", unsafe_allow_html=True)
     st.page_link("pages/3_Expense_Log.py", label="Open Expense Log")
 
-# ── FOOTER ───────────────────────────────────────────────────────────────────
+# Footer
 st.divider()
-st.caption("UniWallet · Fundamentals & Methods of CS · University of St. Gallen · Spring 2026")
+st.caption("UniWallet - Fundamentals & Methods of CS - University of St. Gallen - Spring 2026")

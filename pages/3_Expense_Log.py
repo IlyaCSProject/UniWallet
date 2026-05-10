@@ -1,12 +1,3 @@
-# =============================================================================
-# UniWallet — Expense Log
-# University of St. Gallen  ·  Fundamentals & Methods of CS  ·  Spring 2026
-# =============================================================================
-# HOW TO RUN:
-#   pip install streamlit plotly pandas numpy requests
-#   streamlit run log_exp_alex.py
-# =============================================================================
-
 import sqlite3
 import os
 import requests
@@ -17,17 +8,17 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-# ── PAGE CONFIG ───────────────────────────────────────────────────────────────
+# Page config
 st.set_page_config(page_title="UniWallet — Expense Log", page_icon="W", layout="wide")
 
-# ── COLOUR PALETTE ────────────────────────────────────────────────────────────
+# Colour palette
 GREEN_DARK   = "#1A5C38"
 GREEN_MID    = "#2A8A56"
 GREEN_LIGHT  = "#4DB87A"
 EUR_COLOR    = "#3B82F6"
 CHART_COLORS = ["#1A5C38", "#2A8A56", "#4DB87A", "#7FCF9F", "#B2E4C8", "#D5F0E2"]
 
-# ── DATABASE ──────────────────────────────────────────────────────────────────
+# Database
 DB_PATH = "uniwallet_expenses.db"
 
 def get_connection() -> sqlite3.Connection:
@@ -63,7 +54,7 @@ def init_db():
 
 init_db()
 
-# ── HELPERS ───────────────────────────────────────────────────────────────────
+# Helpers
 CATEGORIES = [
     "Food & Drinks",
     "Transport",
@@ -141,7 +132,7 @@ def update_expense(expense_id: int, date_val: date, description: str,
         )
         conn.commit()
 
-# ── CSS ───────────────────────────────────────────────────────────────────────
+# Styling
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -152,7 +143,7 @@ html, body, [class*="css"], .stApp {
     color: #1C2B2B;
 }
 
-/* ── KPI cards ── */
+/* KPI cards */
 .kpi-card {
     background: #FFFFFF;
     border: 1.5px solid #D1E7D9;
@@ -173,14 +164,14 @@ html, body, [class*="css"], .stApp {
 .neg  { color: #4A5568; }
 .blue { color: #3B82F6; }
 
-/* ── Section headers ── */
+/* Section headers */
 .sec-header {
     font-size: 1rem; font-weight: 600; color: #1C2B2B;
     border-left: 4px solid #1A5C38; padding-left: 12px;
     margin-top: 2rem; margin-bottom: .75rem;
 }
 
-/* ── Page header ── */
+/* Page header */
 .page-header {
     background: linear-gradient(120deg, #1A5C38 0%, #2A8A56 100%);
     border-radius: 14px; padding: 28px 36px; margin-bottom: 1.5rem;
@@ -188,7 +179,7 @@ html, body, [class*="css"], .stApp {
 .page-header h1 { font-size: 1.7rem; font-weight: 700; margin: 0; color: white; }
 .page-header p  { margin: 6px 0 0; font-size: .88rem; opacity: .8; color: white; }
 
-/* ── Add expense form card ── */
+/* Add expense form card */
 .form-card {
     background: #F0FAF4;
     border: 1.5px solid #D1E7D9;
@@ -197,7 +188,7 @@ html, body, [class*="css"], .stApp {
     margin-bottom: 1.5rem;
 }
 
-/* ── Toast-style success / error ── */
+/* Toast-style success / error */
 .toast-ok  { background:#D1FAE5; border:1px solid #6EE7B7; border-radius:10px;
              padding:12px 18px; color:#065F46; font-size:.85rem; font-weight:500; }
 .toast-err { background:#FEE2E2; border:1px solid #FCA5A5; border-radius:10px;
@@ -205,7 +196,7 @@ html, body, [class*="css"], .stApp {
 .toast-info { background:#DBEAFE; border:1px solid #93C5FD; border-radius:10px;
               padding:12px 18px; color:#1D4ED8; font-size:.85rem; font-weight:500; }
 
-/* ── Category pill ── */
+/* Category pill */
 .cat-pill {
     display:inline-block; font-size:.68rem; font-weight:600; border-radius:20px;
     padding:2px 10px; background:#E8F5EE; color:#1A5C38;
@@ -213,13 +204,13 @@ html, body, [class*="css"], .stApp {
 }
 .cat-pill-income { background:#DBEAFE; color:#1D4ED8; border:1px solid #93C5FD; }
 
-/* ── Table row stripe ── */
+/* Table row stripe */
 .log-table-wrap {
     background:white; border:1.5px solid #D1E7D9; border-radius:12px;
     overflow:hidden;
 }
 
-/* ── Widget accent → green ── */
+/* Widget accent → green */
 [data-testid="stSlider"] [role="slider"] { background: #1A5C38 !important; border-color: #1A5C38 !important; }
 
 /* Multiselect selected tags */
@@ -244,18 +235,18 @@ html, body, [class*="css"], .stApp {
 [data-testid="stDataFrame"],
 .stDataFrame { background-color: white !important; border: 1px solid #D1E7D9 !important; border-radius: 10px; }
 
-/* ── Sidebar ── */
+/* Sidebar */
 [data-testid="stSidebar"] { background-color: #F5FBF7 !important; border-right: 1px solid #D1E7D9; }
 [data-testid="stSidebarNav"] { display: none !important; }
 
-/* ── Force ALL sidebar text to be dark and readable ── */
+/* Force ALL sidebar text to be dark and readable */
 [data-testid="stSidebar"] * { color: #1C2B2B !important; }
 [data-testid="stSidebar"] a { color: #1A5C38 !important; text-decoration: none !important; }
 [data-testid="stSidebar"] a:hover { background-color: #E0F0E8 !important; }
 [data-testid="stSidebar"] .sb-logo-text .sb-sub { color: #5A6B6B !important; }
 [data-testid="stSidebar"] small { color: #5A6B6B !important; }
 
-/* ── Sidebar input widgets — white background, dark text ── */
+/* Sidebar input widgets — white background, dark text */
 [data-testid="stSidebar"] input,
 [data-testid="stSidebar"] [data-baseweb="input"] div,
 [data-testid="stSidebar"] [data-testid="stNumberInput-Input"],
@@ -272,18 +263,18 @@ html, body, [class*="css"], .stApp {
 }
 [data-testid="stSidebar"] [data-baseweb="input"] { background-color: white !important; }
 
-/* ── Info / warning bars — dark text ── */
+/* Info / warning bars — dark text */
 [data-testid="stAlert"] p,
 [data-testid="stAlert"] span,
 div[data-baseweb="notification"] div { color: #1C2B2B !important; }
 
-/* ── Force all labels and captions to be dark ── */
+/* Force all labels and captions to be dark */
 label, .stCaption, [data-testid="stCaption"],
 [data-testid="stWidgetLabel"] label,
 [data-testid="stWidgetLabel"] p,
 small { color: #5A6B6B !important; }
 
-/* ── ALL inputs across entire page — white background, dark text ── */
+/* ALL inputs across entire page — white background, dark text */
 input, textarea,
 [data-baseweb="input"],
 [data-baseweb="input"] div,
@@ -298,19 +289,19 @@ input, textarea,
     border: 1px solid #D1E7D9 !important;
 }
 
-/* ── Number input +/- buttons ── */
+/* Number input +/- buttons */
 [data-testid="stNumberInput"] button {
     background-color: white !important;
     color: #1C2B2B !important;
 }
 
-/* ── Radio buttons — dark text ── */
+/* Radio buttons — dark text */
 [data-testid="stRadio"] label,
 [data-testid="stRadio"] label span,
 [data-testid="stRadio"] label p,
 [data-testid="stRadio"] div { color: #1C2B2B !important; }
 
-/* ── Buttons — green with white text ── */
+/* Buttons — green with white text */
 button[kind="primary"],
 button[data-testid="stFormSubmitButton"] button,
 .stButton button {
@@ -320,14 +311,14 @@ button[data-testid="stFormSubmitButton"] button,
 }
 .stButton button:hover { background-color: #2A8A56 !important; }
 
-/* ── Download button ── */
+/* Download button */
 [data-testid="stDownloadButton"] button {
     background-color: #1A5C38 !important;
     color: white !important;
     border: none !important;
 }
 
-/* ── Sidebar: date input, text input, selectbox — white background ── */
+/* Sidebar: date input, text input, selectbox — white background */
 [data-testid="stSidebar"] [data-testid="stDateInput"] input,
 [data-testid="stSidebar"] [data-testid="stDateInput"] > div > div,
 [data-testid="stSidebar"] [data-testid="stTextInput"] input,
@@ -368,7 +359,7 @@ button[data-testid="stFormSubmitButton"] button,
 """, unsafe_allow_html=True)
 
 
-# ── SIDEBAR ───────────────────────────────────────────────────────────────────
+# Sidebar
 with st.sidebar:
 
     st.markdown("""
@@ -430,7 +421,7 @@ with st.sidebar:
     st.caption("v0.1 · HSG · Spring 2026")
 
 
-# ── LOAD & FILTER DATA ────────────────────────────────────────────────────────
+# Load & filter data
 df_all = load_expenses()
 
 if not df_all.empty:
@@ -447,7 +438,7 @@ else:
     df = df_all.copy()
 
 
-# ── PAGE HEADER ───────────────────────────────────────────────────────────────
+# Page header
 st.markdown("""
 <div class="page-header">
   <div style="display:flex; align-items:center; gap:18px;">
@@ -478,7 +469,7 @@ st.markdown("""
 </div>""", unsafe_allow_html=True)
 
 
-# ── KPI SUMMARY ───────────────────────────────────────────────────────────────
+# KPI summary
 if not df.empty:
     expenses_only = df[df["amount_chf"] < 0]
     income_only   = df[df["amount_chf"] > 0]
@@ -520,7 +511,7 @@ else:
     st.info("No entries yet — add your first expense below.")
 
 
-# ── ADD NEW EXPENSE ───────────────────────────────────────────────────────────
+# Add new expense
 with st.container():
     st.markdown('<div class="form-card"><div class="sec-header" style="margin-top:0">Add New Entry</div>', unsafe_allow_html=True)
 
@@ -547,7 +538,7 @@ with st.container():
     # Live conversion hint when a non-CHF currency is selected
     if new_currency != "CHF":
         st.markdown(
-            f'<div class="toast-info">💱 Amount will be automatically converted from '
+            f'<div class="toast-info"> Amount will be automatically converted from '
             f'<strong>{new_currency}</strong> to <strong>CHF</strong> at the current '
             f'exchange rate via Frankfurter API when you submit.</div>',
             unsafe_allow_html=True,
@@ -563,7 +554,7 @@ with st.container():
 
 if submitted:
     if not new_desc.strip():
-        st.markdown('<div class="toast-err">⚠️ Description cannot be empty.</div>',
+        st.markdown('<div class="toast-err"> Description cannot be empty.</div>',
                     unsafe_allow_html=True)
     else:
         signed_amount = -abs(new_amount) if "Expense" in entry_type else abs(new_amount)
@@ -576,7 +567,7 @@ if submitted:
                 amount_chf = convert_to_chf(signed_amount, new_currency)
             if amount_chf is None:
                 st.markdown(
-                    '<div class="toast-err">⚠️ Currency conversion failed (API unreachable). '
+                    '<div class="toast-err"> Currency conversion failed (API unreachable). '
                     'Please check your connection and try again.</div>',
                     unsafe_allow_html=True,
                 )
@@ -589,7 +580,7 @@ if submitted:
         insert_expense(new_date, new_desc.strip(), new_cat,
                        new_currency, signed_amount, amount_chf, new_note.strip())
         st.markdown(
-            f'<div class="toast-ok">✅ Entry added successfully!{conversion_note}</div>',
+            f'<div class="toast-ok"> Entry added successfully!{conversion_note}</div>',
             unsafe_allow_html=True,
         )
         for key in ["new_date", "new_desc", "new_cat", "new_currency",
@@ -599,7 +590,7 @@ if submitted:
         st.rerun()
 
 
-# ── CHARTS ────────────────────────────────────────────────────────────────────
+# Charts
 if not df.empty and len(df[df["amount_chf"] < 0]) > 0:
     st.markdown('<div class="sec-header">Spending Overview</div>', unsafe_allow_html=True)
 
@@ -678,7 +669,7 @@ if not df.empty and len(df[df["amount_chf"] < 0]) > 0:
     st.plotly_chart(fig_cum, use_container_width=True)
 
 
-# ── TRANSACTION TABLE ─────────────────────────────────────────────────────────
+# Transaction table
 st.markdown('<div class="sec-header">All Entries</div>', unsafe_allow_html=True)
 
 if df.empty:
@@ -733,7 +724,7 @@ else:
         hide_index=True,
     )
 
-    # ── Delete / Edit section ─────────────────────────────────────────────────
+    # Delete / Edit section
     if show_delete:
         st.markdown('<div class="sec-header">Edit or Delete an Entry</div>',
                     unsafe_allow_html=True)
@@ -790,7 +781,7 @@ else:
 
             if st.button("Save Changes", key="save_edit"):
                 if not e_desc.strip():
-                    st.markdown('<div class="toast-err">⚠️ Description cannot be empty.</div>',
+                    st.markdown('<div class="toast-err"> Description cannot be empty.</div>',
                                 unsafe_allow_html=True)
                 else:
                     signed = -abs(e_amount) if "Expense" in e_type else abs(e_amount)
@@ -798,14 +789,14 @@ else:
                         e_amount_chf = convert_to_chf(signed, e_ccy)
                     if e_amount_chf is None:
                         st.markdown(
-                            '<div class="toast-err">⚠️ Currency conversion failed. '
+                            '<div class="toast-err"> Currency conversion failed. '
                             'Please try again.</div>',
                             unsafe_allow_html=True,
                         )
                     else:
                         update_expense(selected_id, e_date, e_desc.strip(),
                                        e_cat, e_ccy, signed, e_amount_chf, e_note.strip())
-                        st.markdown('<div class="toast-ok">✅ Entry updated.</div>',
+                        st.markdown('<div class="toast-ok"> Entry updated.</div>',
                                     unsafe_allow_html=True)
                         st.rerun()
 
@@ -818,11 +809,11 @@ else:
             )
             if st.button("Confirm Delete", key="confirm_delete"):
                 delete_expense(selected_id)
-                st.markdown('<div class="toast-ok">✅ Entry deleted.</div>',
+                st.markdown('<div class="toast-ok"> Entry deleted.</div>',
                             unsafe_allow_html=True)
                 st.rerun()
 
-    # ── CSV Export ────────────────────────────────────────────────────────────
+    # Csv export
     st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
     export_df = df_sorted[["date", "description", "category",
                             "currency", "amount", "amount_chf", "note"]].copy()
@@ -837,6 +828,6 @@ else:
     )
 
 
-# ── FOOTER ────────────────────────────────────────────────────────────────────
+# Footer
 st.divider()
 st.markdown('<div style="font-size:.75rem; color:#5A6B6B !important; text-align:center; padding:8px 0;">UniWallet · Fundamentals & Methods of CS · University of St. Gallen · Spring 2026</div>', unsafe_allow_html=True)

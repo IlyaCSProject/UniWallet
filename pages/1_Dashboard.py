@@ -1,12 +1,3 @@
-# =============================================================================
-# UniWallet — Dashboard
-# University of St. Gallen  ·  Fundamentals & Methods of CS  ·  Spring 2026
-# =============================================================================
-# HOW TO RUN:
-#   pip install streamlit plotly pandas numpy requests
-#   streamlit run dashboard.py
-# =============================================================================
-
 import calendar
 from datetime import datetime, timedelta
 import random
@@ -18,17 +9,17 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-# ── PAGE CONFIG ───────────────────────────────────────────────────────────────
+# Page config
 st.set_page_config(page_title="UniWallet", page_icon="W", layout="wide")
 
-# ── COLOUR PALETTE ────────────────────────────────────────────────────────────
+# Colour palette
 GREEN_DARK   = "#1A5C38"
 GREEN_MID    = "#2A8A56"
 GREEN_LIGHT  = "#4DB87A"
 EUR_COLOR    = "#3B82F6"   # blue accent for EUR-denominated items
 CHART_COLORS = ["#1A5C38", "#2A8A56", "#4DB87A", "#7FCF9F", "#B2E4C8", "#D5F0E2"]
 
-# ── LIVE EXCHANGE RATES (cached 1 h) ─────────────────────────────────────────
+# Live exchange rates (cached 1 h)
 @st.cache_data(ttl=3600)
 def fetch_rates(base: str = "CHF") -> dict:
     """Pull FX rates from frankfurter.app (free, no key required)."""
@@ -48,7 +39,7 @@ EUR_TO_CHF = round(1.0 / rates_from_chf.get("EUR", 1.056), 4)
 EUR_TO_CHF_DATA = 0.947
 
 
-# ── SAMPLE DATA ───────────────────────────────────────────────────────────────
+# Sample data
 @st.cache_data
 def generate_sample_transactions() -> pd.DataFrame:
     """
@@ -85,7 +76,7 @@ def generate_sample_transactions() -> pd.DataFrame:
     random.seed(7)
     rows = []
 
-    # --- Variable daily spending (all CHF) ---
+    # Variable daily spending (all CHF)
     for i in range(90):
         date_str = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
         n = random.choices([0, 1, 2], weights=[15, 65, 20])[0]
@@ -97,7 +88,7 @@ def generate_sample_transactions() -> pd.DataFrame:
                          "category": cat, "currency": "CHF",
                          "amount_original": amt, "amount": amt})
 
-    # --- Fixed monthly costs (CHF) ---
+    # Fixed monthly costs (CHF)
     for i in range(0, 90, 30):
         date_str = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
         for desc, amt in [
@@ -109,14 +100,14 @@ def generate_sample_transactions() -> pd.DataFrame:
             rows.append({"date": date_str, "description": desc, "category": "Utilities",
                          "currency": "CHF", "amount_original": amt, "amount": amt})
 
-    # --- Semester fee (CHF, once) ---
+    # Semester fee (CHF, once)
     rows.append({
         "date": (datetime.now() - timedelta(days=45)).strftime("%Y-%m-%d"),
         "description": "HSG Semester Fee", "category": "Education",
         "currency": "CHF", "amount_original": -650.00, "amount": -650.00,
     })
 
-    # --- Monthly income ---
+    # Monthly income
     for i in range(0, 90, 30):
         date_str = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
 
@@ -141,24 +132,10 @@ def generate_sample_transactions() -> pd.DataFrame:
     return df.sort_values("date", ascending=False).reset_index(drop=True)
 
 
-# ── LOAD DATA ─────────────────────────────────────────────────────────────────
-# Try to read real transactions from the shared SQLite database first.
-# If the database is empty or missing, fall back to sample data so the
-# dashboard still has something to show. This means: as soon as the user
-# logs their first real expense in the Expense Log page, the dashboard
-# will automatically switch from sample data to their real data.
-try:
-    import sys, os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-    from database.db_helper import get_expenses
-    df_all = get_expenses()
-    using_sample = False
-except Exception:
-    df_all = generate_sample_transactions()
-    using_sample = True
+df_all = generate_sample_transactions()
 
 
-# ── CSS ───────────────────────────────────────────────────────────────────────
+# Styling
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -169,7 +146,7 @@ html, body, [class*="css"], .stApp {
     color: #1C2B2B;
 }
 
-/* ── KPI cards ── */
+/* KPI cards */
 .kpi-card {
     background: #FFFFFF;
     border: 1.5px solid #D1E7D9;
@@ -190,14 +167,14 @@ html, body, [class*="css"], .stApp {
 .neg  { color: #4A5568; }
 .blue { color: #3B82F6; }
 
-/* ── Section headers ── */
+/* Section headers */
 .sec-header {
     font-size: 1rem; font-weight: 600; color: #1C2B2B;
     border-left: 4px solid #1A5C38; padding-left: 12px;
     margin-top: 2rem; margin-bottom: .75rem;
 }
 
-/* ── Page header ── */
+/* Page header */
 .page-header {
     background: linear-gradient(120deg, #1A5C38 0%, #2A8A56 100%);
     border-radius: 14px; padding: 28px 36px; margin-bottom: 1.5rem;
@@ -205,7 +182,7 @@ html, body, [class*="css"], .stApp {
 .page-header h1 { font-size: 1.7rem; font-weight: 700; margin: 0; color: white; }
 .page-header p  { margin: 6px 0 0; font-size: .88rem; opacity: .8; color: white; }
 
-/* ── Forecast banner ── */
+/* Forecast banner */
 .forecast-banner {
     background: linear-gradient(120deg, #1A5C38 0%, #2A8A56 100%);
     border-radius: 12px; padding: 22px 26px; color: white;
@@ -215,7 +192,7 @@ html, body, [class*="css"], .stApp {
 .forecast-banner .fb-value { font-size: 2.1rem; font-weight: 700; margin: 6px 0 4px; }
 .forecast-banner .fb-note  { font-size: .8rem; opacity: .75; }
 
-/* ── FX panel cards ── */
+/* FX panel cards */
 .fx-rate-banner {
     background: linear-gradient(120deg, #1E3A8A 0%, #3B82F6 100%);
     border-radius: 12px; padding: 22px 26px; color: white; text-align: center;
@@ -248,16 +225,16 @@ html, body, [class*="css"], .stApp {
 .up   { color: #1A5C38; }
 .down { color: #9CA3AF; }
 
-/* ── EUR badge in transaction table ── */
+/* EUR badge in transaction table */
 .eur-badge {
     background: #DBEAFE; color: #1D4ED8; font-size: .68rem; font-weight: 600;
     border-radius: 4px; padding: 2px 6px; margin-left: 4px;
 }
 
-/* ── Widget accent → green ── */
+/* Widget accent → green */
 [data-testid="stSlider"] [role="slider"] { background: #1A5C38 !important; border-color: #1A5C38 !important; }
 
-/* ── Number input + date input — white background, dark text ── */
+/* Number input + date input — white background, dark text */
 [data-testid="stNumberInput"] input,
 [data-testid="stDateInput"] input {
     background-color: white !important;
@@ -295,16 +272,16 @@ html, body, [class*="css"], .stApp {
 [data-baseweb="option"] { background-color: white !important; color: #1C2B2B !important; }
 [data-baseweb="option"]:hover { background-color: #E8F5EE !important; }
 
-/* ── Dataframe — white container, natural internal rendering ── */
+/* Dataframe — white container, natural internal rendering */
 [data-testid="stDataFrame"],
 .stDataFrame { background-color: white !important; border: 1px solid #D1E7D9 !important; border-radius: 10px; }
 
-/* ── Sidebar ── */
+/* Sidebar */
 [data-testid="stSidebar"] { background-color: #F5FBF7 !important; border-right: 1px solid #D1E7D9; }
 [data-testid="stSidebarNav"] { display: none !important; }
 
 
-/* ── Force ALL sidebar text to be dark and readable ── */
+/* Force ALL sidebar text to be dark and readable */
 [data-testid="stSidebar"] * {
     color: #1C2B2B !important;
 }
@@ -313,7 +290,7 @@ html, body, [class*="css"], .stApp {
 [data-testid="stSidebar"] .sb-logo-text .sb-sub { color: #5A6B6B !important; }
 [data-testid="stSidebar"] small { color: #5A6B6B !important; }
 
-/* ── Sidebar input widgets — white background, dark text ── */
+/* Sidebar input widgets — white background, dark text */
 [data-testid="stSidebar"] input,
 [data-testid="stSidebar"] [data-baseweb="input"] div,
 [data-testid="stSidebar"] [data-testid="stNumberInput-Input"],
@@ -332,25 +309,25 @@ html, body, [class*="css"], .stApp {
     background-color: white !important;
 }
 
-/* ── Info / warning bars — dark text ── */
+/* Info / warning bars — dark text */
 [data-testid="stAlert"] p,
 [data-testid="stAlert"] span,
 div[data-baseweb="notification"] div { color: #1C2B2B !important; }
 
-/* ── Force all labels and captions to be dark ── */
+/* Force all labels and captions to be dark */
 label, .stCaption, [data-testid="stCaption"],
 [data-testid="stWidgetLabel"] label,
 [data-testid="stWidgetLabel"] p,
 .stNumberInput label, .stSelectbox label,
 small { color: #5A6B6B !important; }
 
-/* ── Sidebar logo ── */
+/* Sidebar logo */
 .sb-logo { display:flex; align-items:center; gap:12px; padding-bottom:18px;
            border-bottom:1px solid #D1E7D9; margin-bottom:6px; }
 .sb-logo-text .sb-name { font-size:1.15rem; font-weight:700; color:#1A5C38; line-height:1.2; }
 .sb-logo-text .sb-sub  { font-size:.68rem; color:#5A6B6B; letter-spacing:.03em; }
 
-/* ── Sidebar nav ── */
+/* Sidebar nav */
 .nav-section { margin: 12px 0 4px; }
 .nav-label   { font-size:.65rem; font-weight:600; text-transform:uppercase;
                letter-spacing:.09em; color:#8A9A9A; padding:0 4px; margin-bottom:6px; }
@@ -369,7 +346,7 @@ small { color: #5A6B6B !important; }
 .nav-soon { font-size:.62rem; background:#E8F5EE; color:#2A8A56; border-radius:4px;
             padding:1px 5px; margin-left:auto; font-weight:600; letter-spacing:.03em; }
 
-/* ── Budget status bar ── */
+/* Budget status bar */
 .budget-wrap {
     background:white; border:1.5px solid #D1E7D9; border-radius:12px;
     padding:16px 20px; margin:1rem 0 .5rem;
@@ -396,10 +373,10 @@ small { color: #5A6B6B !important; }
 """, unsafe_allow_html=True)
 
 
-# ── SIDEBAR ───────────────────────────────────────────────────────────────────
+# Sidebar
 with st.sidebar:
 
-    # ── Logo ─────────────────────────────────────────────────────────────────
+    # Logo
     st.markdown("""
     <div class="sb-logo">
       <svg width="42" height="42" viewBox="0 0 54 54" xmlns="http://www.w3.org/2000/svg">
@@ -425,7 +402,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Navigation ───────────────────────────────────────────────────────────
+    # Navigation
     st.page_link("app.py", label="Home")
     st.page_link("pages/1_Dashboard.py", label="Dashboard")
     st.page_link("pages/2_Prediction.py", label="Prediction")
@@ -433,7 +410,7 @@ with st.sidebar:
 
     st.divider()
 
-    # ── Budget ───────────────────────────────────────────────────────────────
+    # Budget
     st.markdown("**Monthly Budget**")
     monthly_budget = st.number_input(
         "Budget (CHF)", min_value=0, max_value=10000,
@@ -442,7 +419,7 @@ with st.sidebar:
 
     st.divider()
 
-    # ── Filters ──────────────────────────────────────────────────────────────
+    # Filters
     st.markdown("**Filters**")
     expense_cats  = sorted(df_all[df_all["category"] != "Income"]["category"].unique().tolist())
     selected_cats = st.multiselect("Categories", expense_cats, default=expense_cats)
@@ -469,7 +446,7 @@ expenses_df = df[df["amount"] < 0].copy()
 expenses_df["amount"] = expenses_df["amount"].abs()
 
 
-# ── KEY METRICS ───────────────────────────────────────────────────────────────
+# Key metrics
 total_income    = df[df["amount"] > 0]["amount"].sum()
 total_expenses  = df[df["amount"] < 0]["amount"].sum()
 current_balance = total_income + total_expenses
@@ -485,7 +462,7 @@ eur_received_chf   = eur_income_df["amount"].sum()             # CHF equivalent 
 n_eur_transfers    = len(eur_income_df)
 
 
-# ── PAGE HEADER ───────────────────────────────────────────────────────────────
+# Page header
 st.markdown("""
 <div class="page-header">
   <div style="display:flex; align-items:center; gap:18px;">
@@ -515,12 +492,8 @@ st.markdown("""
   </div>
 </div>""", unsafe_allow_html=True)
 
-# Show a small notice when using sample data (i.e. the database is empty)
-if using_sample:
-    st.info("Showing sample data. Log your first expense in the Expense Log to see your real numbers here.")
 
-
-# ── KPI CARDS ─────────────────────────────────────────────────────────────────
+# KPI cards
 c1, c2, c3, c4 = st.columns(4)
 with c1:
     st.markdown(f"""<div class="kpi-card">
@@ -545,7 +518,7 @@ with c4:
 
 st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
-# ── BUDGET STATUS BAR ─────────────────────────────────────────────────────────
+# Budget status bar
 spent        = abs(this_month_exp)
 pct          = min(spent / monthly_budget * 100, 100) if monthly_budget > 0 else 0
 over_budget  = spent > monthly_budget and monthly_budget > 0
@@ -584,7 +557,7 @@ if monthly_budget > 0:
     </div>""", unsafe_allow_html=True)
 
 
-# ── CHART ROW 1: PIE + BAR ────────────────────────────────────────────────────
+# Chart row 1: pie + bar
 st.markdown('<div class="sec-header">Spending Breakdown</div>', unsafe_allow_html=True)
 
 category_totals = expenses_df.groupby("category")["amount"].sum().reset_index()
@@ -634,7 +607,7 @@ with bar_col:
     st.plotly_chart(fig_bar, use_container_width=True)
 
 
-# ── CHART ROW 2: CUMULATIVE LINE ──────────────────────────────────────────────
+# Chart row 2: cumulative line
 st.markdown('<div class="sec-header">Cumulative Spending Over Time</div>', unsafe_allow_html=True)
 
 daily_cum = (expenses_df.groupby("date")["amount"].sum()
@@ -661,7 +634,7 @@ st.plotly_chart(fig_cum, use_container_width=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ── FOREIGN INCOME & EXCHANGE ─────────────────────────────────────────────────
+# Foreign income & exchange
 # Many HSG students receive EUR allowances from abroad (e.g. German parents)
 # but live and spend in CHF. This section makes that visible.
 # ══════════════════════════════════════════════════════════════════════════════
@@ -724,7 +697,7 @@ with fx_left:
     )
     st.plotly_chart(fig_inc, use_container_width=True)
 
-    # ── Top categories this month ─────────────────────────────────────────────
+    # Top categories this month
     # Exclude Utilities (fixed costs like rent) so the chart shows daily spending habits
     st.markdown("""<div style='font-size:.75rem; font-weight:600; text-transform:uppercase;
         letter-spacing:.07em; color:#5A6B6B; margin-bottom:8px;'>Top Spending Categories This Month</div>""",
@@ -757,7 +730,7 @@ with fx_left:
                 unsafe_allow_html=True)
 
 with fx_right:
-    # ── Live rate banner ──────────────────────────────────────────────────────
+    # Live rate banner
     st.markdown(f"""
     <div class="fx-rate-banner">
         <div class="fx-label">Live Exchange Rate</div>
@@ -767,7 +740,7 @@ with fx_right:
 
     st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
-    # ── Allowance calculator ──────────────────────────────────────────────────
+    # Allowance calculator
     st.markdown("**Allowance Calculator**")
     st.markdown('<div style="font-size:.75rem; color:#5A6B6B;">How much CHF does your EUR allowance actually buy?</div>', unsafe_allow_html=True)
 
@@ -828,7 +801,7 @@ with fx_right:
         </div>""", unsafe_allow_html=True)
 
 
-# ── ML FORECAST ───────────────────────────────────────────────────────────────
+# ML forecast
 st.markdown('<div class="sec-header">Month-End Forecast</div>', unsafe_allow_html=True)
 
 fc_left, fc_right = st.columns([1, 2])
@@ -892,7 +865,7 @@ with fc_right:
         st.plotly_chart(fig_fc, use_container_width=True)
 
 
-# ── RECENT TRANSACTIONS ───────────────────────────────────────────────────────
+# Recent transactions
 st.markdown('<div class="sec-header">Recent Transactions</div>', unsafe_allow_html=True)
 
 n_rows = st.slider("Rows to display", 5, 50, 15)
@@ -938,6 +911,6 @@ st.markdown(f"""
 </div>""", unsafe_allow_html=True)
 
 
-# ── FOOTER ────────────────────────────────────────────────────────────────────
+# Footer
 st.divider()
 st.markdown('<div style="font-size:.75rem; color:#5A6B6B; text-align:center; padding:8px 0;">UniWallet · Fundamentals & Methods of CS · University of St. Gallen · Spring 2026</div>', unsafe_allow_html=True)
